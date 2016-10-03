@@ -28,7 +28,6 @@ sure the following URLs are publicly accessible:
     * https://yoursite.com/manifest.json
     * https://yoursite.com/pushwoosh-service-worker-light.js
     * https://yoursite.com/pushwoosh-service-worker-dark.js
-
      
 ### http
 Enable settings push notifications for Chrome and Firefox http websites.
