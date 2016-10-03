@@ -1,0 +1,4 @@
+name = pushwoosh
+description = Integrate pushwoosh push notification service with drupal.
+core = 7.x
+package = pushwoosh

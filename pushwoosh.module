@@ -1,0 +1,105 @@
+<?php
+/**
+ * @file
+ * Module file for pushwoosh integration with drupal.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function pushwoosh_menu() {
+  $items['admin/config/pushwoosh'] = array(
+    'title' => 'Pushwoosh',
+    'description' => 'Admin settings for pushwoosh push notification service.',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('pushwoosh administer'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+  $items['admin/config/pushwoosh/settings'] = array(
+    'title' => 'settings',
+    'description' => 'Admin settings for pushwoosh push notification.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('pushwoosh_admin_settings'),
+    'access arguments' => array('pushwoosh administer'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'pushwoosh.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function pushwoosh_permission() {
+  return array(
+    'pushwoosh administer' => array(
+      'title' => t('Pushwoosh Administer'),
+      'description' => t('Configure pushwoosh service for push notification'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function pushwoosh_page_build() {
+  $pushwoosh_protocol = variable_get('pushwoosh_protocol');
+  $pushwoosh_application_code = variable_get('pushwoosh_application_code');
+  if ($pushwoosh_protocol == 'HTTPS') {
+    // <link rel="manifest" href="/manifest.json">
+    // Include manifest.json in <head> (not <body>).
+    // Ensure it will be at the top.
+    $manifest = array(
+      '#tag' => 'link',
+      '#attributes' => array(
+        'rel' => 'manifest',
+        'href' => '/manifest.json',
+      ),
+      '#weight' => '-100',
+    );
+    drupal_add_html_head($manifest, 'shortcut_icon');
+    // Include the SDK from CDN asynchronously.
+    $pwn = array(
+      '#type' => 'markup',
+      '#markup' => '<script type="text/javascript" src="//cdn.pushwoosh.com/webpush/pushwoosh-web-notifications.js" async></script>',
+    );
+    drupal_add_html_head($pwn, 'pushwoosh');
+    // Initialize the Web Push SDK and make sure to queue the initialization
+    // until the moment the SDK is fully loaded.
+    drupal_add_js("
+    var Pushwoosh = Pushwoosh || [];
+Pushwoosh.push(['init', {
+    logLevel: 'info', // or debug
+    applicationCode: '". $pushwoosh_application_code ."',
+    safariWebsitePushID: 'web.com.example.domain',
+    defaultNotificationTitle: 'Pushwoosh DF',
+    defaultNotificationImage: 'https://cp.pushwoosh.com/img/logo-medium.png'
+}]);
+    ",
+      array('type' => 'inline', 'scope' => 'header', 'weight' => 500)
+    );
+
+    // After Web Push SDK is initialized.
+    drupal_add_js("
+    Pushwoosh.push(function(api) {
+    // Subscribe for push notifications. The method is called automatically 
+    // upon the first visit to the website, once the user allows notifications
+    api.registerDevice();
+    });
+    ",
+      array('type' => 'inline', 'scope' => 'footer', 'weight' => 500)
+    );
+
+
+  }
+  elseif ($pushwoosh_protocol == 'HTTP') {
+    drupal_add_js(drupal_get_path('module', 'pushwoosh') . '/js/pushwoosh-web-pushes-http-sdk.js', array('type' => 'file'));
+    // Subscriptions Notification window to appear automatically once page
+    // loaded.
+    drupal_add_js("jQuery(document).ready(function () { 
+    pushwoosh.init('".$pushwoosh_application_code."'); 
+    pushwoosh.subscribeAtStart(); });", 'inline');
+  }
+}
