@@ -70,13 +70,13 @@ function pushwoosh_page_build() {
     // until the moment the SDK is fully loaded.
     drupal_add_js("
     var Pushwoosh = Pushwoosh || [];
-Pushwoosh.push(['init', {
-    logLevel: 'info', // or debug
+    Pushwoosh.push(['init', {
+    logLevel: '" . variable_get('pushwoosh_loglevel', 'info') . "',
     applicationCode: '". $pushwoosh_application_code ."',
-    safariWebsitePushID: 'web.com.example.domain',
-    defaultNotificationTitle: 'Pushwoosh DF',
-    defaultNotificationImage: 'https://cp.pushwoosh.com/img/logo-medium.png'
-}]);
+    safariWebsitePushID: '". variable_get('pushwoosh_swpid', 'web.com.example.domain') ."',
+    defaultNotificationTitle: '". variable_get('pushwoosh_dnt', 'Pushwoosh Demo')."',
+    defaultNotificationImage: '". variable_get('pushwoosh_dni', 'https://cp.pushwoosh.com/img/logo-medium.png') ."'
+    }]);
     ",
       array('type' => 'inline', 'scope' => 'header', 'weight' => 500)
     );
