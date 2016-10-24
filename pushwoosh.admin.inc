@@ -104,6 +104,16 @@ function pushwoosh_admin_settings() {
     http websites.</li><li> For pushwoosh account settings for http 
     follow the instruction here - http://docs.pushwoosh.com/docs/chrome-web-push-for-http-websites</li></ul>',
   );
+  
+  // Tag settings.
+  $form['pushwoosh_tags'] = array(
+    '#title' => t('Tags'),
+    '#type' => 'textarea',
+    '#description' => t('Set tags for the user. Enter JSON object key as tag 
+    name and value can be string or callback (callback should end with _get 
+    string). example: {"Tag Name 1": "mymodule_name_get",  "Tag Name 2": "mymodule_dob_get",  "Tag Name 3": "www.example.com"}'),
+    '#default_value' => variable_get('pushwoosh_tags'),
+  );
 
   $form['#submit'][] = 'pushwoosh_admin_submit';
 
