@@ -80,13 +80,58 @@ function pushwoosh_page_build() {
     ",
       array('type' => 'inline', 'scope' => 'header', 'weight' => 500)
     );
+    
+    // Add JS code for tagging user.
+    $output_tags = array();
+    if (user_is_logged_in()) {
+      $tags = variable_get('pushwoosh_tags');
+      if (!empty($tags)) {
+        $tags = json_decode($tags);
+        foreach($tags as $tag_name => $value) {
+          $value = trim($value);
+          if (substr($value, -4) == '_get') {
+            $output_tags[$tag_name] = call_user_func_array($value, array());
+          }
+          else {
+            $output_tags[$tag_name] = $value;
+          }
+
+        }
+      }
+    }
+    $json_tags = json_encode($output_tags);
+    $jquery_tags = '';
+    if (!empty($output_tags)) {
+      $jquery_tags = "
+      var utags = ". $json_tags .";
+      var stags = {};
+    api.getTags().then(function(result) {
+        for(tag in utags) {
+          if (!result.result[tag]) {
+            stags[tag] = utags[tag];
+          }
+        }
+        
+        return api.setTags(stags).then(function(r) {
+          console.log('setTags result', r);
+        });
+        
+    }).catch(function(e) {
+        console.log('error', e);
+    });
+      
+      ";
+    }
 
     // After Web Push SDK is initialized.
     drupal_add_js("
+    jQuery(document).ready(function () {
     Pushwoosh.push(function(api) {
+    ". $jquery_tags . "
     // Subscribe for push notifications. The method is called automatically 
     // upon the first visit to the website, once the user allows notifications
     api.registerDevice();
+    });
     });
     ",
       array('type' => 'inline', 'scope' => 'footer', 'weight' => 500)
